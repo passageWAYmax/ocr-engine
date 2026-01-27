@@ -5,53 +5,23 @@ from PIL import Image
 
 from main import run_ocr
 
+
+# ------------------ CACHE OCR ------------------
 @st.cache(show_spinner=False, allow_output_mutation=True)
-def cached_ocr(image_path):
+def cached_ocr(image_path: str):
     return run_ocr(image_path)
+
 
 # ------------------ PAGE CONFIG ------------------
 st.set_page_config(
-    page_title="OCR Engine (PaddleOCR)",
+    page_title="OCR Engine",
     layout="wide"
 )
 
+
 # ------------------ THEME / CSS ------------------
-# st.markdown("""
-# <style>
-# .stApp {
-#     background-color: #0E1117;
-# }
-
-# h1, h2, h3 {
-#     color: #2ECC71;
-# }
-
-# textarea {
-#     background-color: #1C1F26 !important;
-#     color: #FAFAFA !important;
-#     border-radius: 10px;
-#     border: 1px solid #2ECC71 !important;
-# }
-
-# button {
-#     border-radius: 10px !important;
-# }
-
-# div[data-testid="stAlert"] {
-#     background-color: #123D2B !important;
-#     border-left: 6px solid #2ECC71 !important;
-#     color: #FAFAFA !important;
-#     border-radius: 12px;
-# }
-# </style>
-# """, unsafe_allow_html=True)
-
-
 st.markdown("""
 <style>
-/* ---------------------------------------------------------------------
-   1. GLOBAL PAGE STYLING
---------------------------------------------------------------------- */
 .stApp {
     background-color: #FBFDFF;
     color: #0F172A;
@@ -62,28 +32,20 @@ h1, h2, h3 {
     font-weight: 700 !important;
 }
 
-label, .stText, p {
+label, p {
     color: #0F172A !important;
     font-weight: 500;
 }
 
-/* ---------------------------------------------------------------------
-   2. TOP HEADER BAR (Blue + White Text)
---------------------------------------------------------------------- */
 header[data-testid="stHeader"] {
     background-color: #2563EB !important;
 }
 header[data-testid="stHeader"] * {
     color: #FFFFFF !important;
-    fill: #FFFFFF !important;
 }
 
-/* ---------------------------------------------------------------------
-   3. SUCCESS BOX (Green Background + Readable Dark Text)
---------------------------------------------------------------------- */
 div[data-testid="stAlert"] {
     background-color: #D1FAE5 !important;
-    border: 1px solid #34D399 !important;
     border-left: 5px solid #059669 !important;
     border-radius: 8px;
 }
@@ -91,80 +53,58 @@ div[data-testid="stAlert"] * {
     color: #064E3B !important;
     font-weight: 700 !important;
 }
-div[data-testid="stAlert"] svg {
-    fill: #059669 !important;
-    color: #059669 !important;
-}
 
-/* ---------------------------------------------------------------------
-   4. COLUMN SEPARATOR
---------------------------------------------------------------------- */
-@media (min-width: 640px) {
-    div[data-testid="column"]:nth-of-type(1) {
-        border-right: 2px solid #E2E8F0;
-        padding-right: 3rem;
-    }
-}
-
-/* ---------------------------------------------------------------------
-   5. IMAGE STYLING & BUTTON REMOVAL
---------------------------------------------------------------------- */
-/* REMOVE the Enlarge/Fullscreen Button */
 div[data-testid="stImage"] button {
     display: none !important;
-    pointer-events: none !important;
 }
 
-/* Zoom Effect on Hover */
-div[data-testid="stImage"] img {
-    transition: transform 0.3s ease;
-    border-radius: 8px;
-    display: block;
-}
-div[data-testid="stImage"] img:hover {
-    transform: scale(1.03);
-    z-index: 999;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-}
-
-/* ---------------------------------------------------------------------
-   6. INPUTS & BUTTONS
---------------------------------------------------------------------- */
-section[data-testid="stFileUploader"] {
-    background-color: #FFFFFF;
-    border: 2px dashed #2563EB;
-    border-radius: 12px;
-    padding: 15px;
-}
-textarea {
-    background-color: #FFFFFF !important;
-    color: #0F172A !important;
-    border: 1px solid #2563EB !important;
-    border-radius: 8px;
-}
 button {
     background-color: #2563EB !important;
     color: #FFFFFF !important;
-    border: none !important;
     border-radius: 8px !important;
 }
 button:hover {
     background-color: #1E40AF !important;
 }
 
+/* RIGHT COLUMN SCROLL */
+
+div[data-testid="column"]:nth-of-type(2) > div > div > div {
+    max-height: 80vh;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+/* scrollbar styling */
+div[data-testid="column"]:nth-of-type(2) ::-webkit-scrollbar {
+    width: 8px;
+}
+
+div[data-testid="column"]:nth-of-type(2) ::-webkit-scrollbar-thumb {
+    background-color: #94A3B8;
+    border-radius: 10px;
+}
+
+div[data-testid="column"]:nth-of-type(2) ::-webkit-scrollbar-track {
+    background-color: #E5E7EB;
+}
+            
 </style>
 """, unsafe_allow_html=True)
 
+
 # ------------------ HEADER ------------------
 st.title("OCR ENGINE")
-st.caption("Offline OCR powered by PaddleOCR")
+st.caption("Offline OCR & Document Intelligence (PaddleOCR + Gemini_3)")
+
 
 # ------------------ MAIN LAYOUT ------------------
-left_col, right_col = st.columns([1, 1])
+left_col, right_col = st.columns([1, 1.4])
 
-# ------------------ LEFT COLUMN (UPLOAD + PREVIEW) ------------------
+
+# ------------------ LEFT COLUMN ------------------
 with left_col:
-    st.subheader("📤 Upload Image")
+    st.subheader("📤 Upload Document Image")
 
     uploaded_file = st.file_uploader(
         "Upload image (JPG, JPEG, PNG)",
@@ -183,113 +123,66 @@ with left_col:
         image = Image.open(image_path)
 
         st.subheader("🖼 Image Preview")
-        st.image(image, width=350)
+        st.image(image, width=360)
+
 
 # ------------------ OCR PROCESS ------------------
 result = None
 
 if image_path:
-    with st.spinner("🔍 Processing image..."):
+    with st.spinner("🔍 Running OCR + AI parsing..."):
         try:
             result = cached_ocr(image_path)
         except Exception as e:
             st.error(f"OCR failed: {e}")
             result = None
 
-st.session_state["ocr_result"] = result
 
-# ------------------ RIGHT COLUMN (RESULTS) ------------------
-# with right_col:
-#     if result and isinstance(result, dict):
-#         st.success("✅ OCR completed successfully!")
-
-#         st.subheader("📄 Extracted Result")
-
-#         fields = result.get("fields", {})
-
-#         if fields:
-#             extracted_text = "\n".join(
-#                 f"{k}: {v}" for k, v in fields.items()
-#             )
-#         else:
-#             extracted_text = ""
-
-#         st.text_area(
-#             "Extracted Text",
-#             value=extracted_text,
-#             height=280
-#         )
-
-#         st.subheader("⬇ Download Output")
-
-#         json_data = json.dumps(
-#             result,
-#             indent=4,
-#             ensure_ascii=False
-#         )
-
-#         text_data = extracted_text or "No text detected."
-
-#         # ✅ NO nested columns here
-#         st.download_button(
-#             label="📥 Download as JSON",
-#             data=json_data,
-#             file_name="ocr_output.json",
-#             mime="application/json"
-#         )
-
-#         st.download_button(
-#             label="📥 Download as Text",
-#             data=text_data,
-#             file_name="ocr_output.txt",
-#             mime="text/plain"
-#         )
-
+# ------------------ RIGHT COLUMN ------------------
 with right_col:
     if result and isinstance(result, dict):
-        st.success("✅ OCR completed successfully!")
 
-        st.subheader("📄 Extracted Result")
+       scroll_container = st.container()
 
-        fields = result.get("fields", {})
+       with scroll_container:
+        st.success("✅ Processing completed successfully")
 
-        extracted_text = "\n".join(
-            f"{k}: {v}" for k, v in fields.items()
-        ) if fields else ""
-
-        st.text_area(
-            "Extracted Text",
-            value=extracted_text,
-            height=280
-        )
-
-        # 🔥 NEW: Bounding box visualization
         boxed_image_path = result.get("boxed_image_path")
-
         if boxed_image_path and os.path.exists(boxed_image_path):
-            st.subheader("📦 OCR Bounding Boxes")
-            st.image(boxed_image_path, width=350)
+            st.subheader("📦 Detected Text Regions")
+            st.image(boxed_image_path, use_column_width=True)
+
+        parsed_data = result.get("parsed_data")
+
+        if parsed_data:
+            st.subheader("🧾 Extracted Document Data")
+
+            for key, value in parsed_data.items():
+                if isinstance(value, list):
+                    st.markdown(f"### {key.replace('_', ' ').title()}")
+                    if value:
+                        st.table(value)
+                    else:
+                        st.info(f"No {key} detected")
+                elif isinstance(value, dict):
+                    st.markdown(f"### {key.replace('_', ' ').title()}")
+                    st.json(value)
+                else:
+                    st.write(f"**{key.replace('_', ' ').title()}:** {value}")
+
+        else:
+            st.warning("No structured data could be extracted from this document.")
+
+        structured_data = result.get("llm_output", {})
+
+        with st.expander("📋 View Extracted Data (JSON)", expanded=True):
+            st.json(structured_data)
 
         st.subheader("⬇ Download Output")
 
-        json_data = json.dumps(
-            result,
-            indent=4,
-            ensure_ascii=False
-        )
-
-        text_data = extracted_text or "No text detected."
-
         st.download_button(
-            label="📥 Download as JSON",
-            data=json_data,
+            "📥 Download Full JSON",
+            data=json.dumps(result, indent=4, ensure_ascii=False),
             file_name="ocr_output.json",
             mime="application/json"
-        )
-
-        st.download_button(
-            label="📥 Download as Text",
-            data=text_data,
-            file_name="ocr_output.txt",
-            mime="text/plain"
         )
